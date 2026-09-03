@@ -16,7 +16,7 @@ local tween = Helpers.tween
 -- ASSETS
 -- ================================================
 
-local LogoURL = Config.LogoURL or ""
+local LogoURL = Config.LogoURL or "https://files.catbox.moe/jllkak.png"
 local LocalPath = Config.LogoLocalPath or "PhoneIDViewer_Logo.png"
 
 pcall(function()
