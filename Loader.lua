@@ -292,6 +292,11 @@ local AppList = {
     },
 
     {
+        path = "Applications/Profile.lua",
+        name = "Profile"
+    },
+
+    {
         path = "Applications/Premium.lua",
         name = "Premium"
     },
