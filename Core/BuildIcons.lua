@@ -179,7 +179,7 @@ _G.appTitle = appTitle
 
 -- ================= DOCK ICONS =================
 buildAppIcon("Profile", 1, dockBg, function() _G.openApp("Profile", _G.openProfileApp) end)
-buildAppIcon("Command", 2, dockBg, function() _G.openApp("Commands", _G.openCommandApp) end)
+-- buildAppIcon("Command", 2, dockBg, function() _G.openApp("Commands", _G.openCommandApp) end)
 buildAppIcon("Settings", 3, dockBg, function() _G.openApp("Settings", _G.openSettingsApp) end)
 
 -- ================= GRID ICONS =================
@@ -193,13 +193,13 @@ buildAppIcon("Size", 9, appGrid, function() _G.openApp("Size", _G.openSizeApp) e
 buildAppIcon("Volume", 10, appGrid, function() _G.openApp("Volume", _G.openVolumeApp) end)
 buildAppIcon("Friends", 11, appGrid, function() _G.openApp("Friends", _G.openFriendsApp) end)
 buildAppIcon("Server", 12, appGrid, function() _G.openApp("Server", _G.openServerListApp) end)
-buildAppIcon("Bundle", 13, appGrid, function() _G.openApp("Bundle", _G.openBundleApp) end)
+-- buildAppIcon("Bundle", 13, appGrid, function() _G.openApp("Bundle", _G.openBundleApp) end)
 buildAppIcon("WhoOnline", 14, appGrid, function() _G.openApp("Who's Online", _G.openWhoOnlineApp) end)
-buildAppIcon("Message", 15, appGrid, function() _G.openApp("Messages", _G.openMessageApp) end)
+-- buildAppIcon("Message", 15, appGrid, function() _G.openApp("Messages", _G.openMessageApp) end)
 buildAppIcon("Premium", 16, appGrid, function() _G.openApp("Premium", _G.openPremiumApp) end)
-buildAppIcon("AlfreadAI", 17, appGrid, function() _G.openApp("AlfreadAI", _G.openAlfreadAIApp) end)
+-- buildAppIcon("AlfreadAI", 17, appGrid, function() _G.openApp("AlfreadAI", _G.openAlfreadAIApp) end)
 buildAppIcon("Shader", 18, appGrid, function() _G.openApp("Shader", _G.openShaderApp) end)
-buildAppIcon("Games", 19, appGrid, function() _G.openApp("Games", _G.openGamesApp) end)
+-- buildAppIcon("Games", 19, appGrid, function() _G.openApp("Games", _G.openGamesApp) end)
 buildAppIcon("Emote", 20, appGrid, function() _G.openApp("Emote", _G.openEmoteApp) end)
 buildAppIcon("MyClone", 21, appGrid, function() _G.openApp("MyClone", _G.openMyCloneApp) end)
 buildAppIcon("Model3D", 22, appGrid, function() _G.openApp("Model3D", _G.openModel3DApp) end)
