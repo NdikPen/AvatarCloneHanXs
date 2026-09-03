@@ -16,23 +16,9 @@ local tween = Helpers.tween
 -- ASSETS
 -- ================================================
 
-local LogoURL = Config.LogoURL or "https://files.catbox.moe/jllkak.png"
-local LocalPath = Config.LogoLocalPath or "PhoneIDViewer_Logo.png"
+local LocalPath = "Logo/icon.png"
 
-pcall(function()
-    if LogoURL ~= "" and not isfile(LocalPath) then
-        writefile(LocalPath, game:HttpGet(LogoURL))
-    end
-end)
-
-local FinalLogo = LogoURL
-
-pcall(function()
-    if getcustomasset and isfile(LocalPath) then
-        FinalLogo = getcustomasset(LocalPath)
-    end
-end)
-
+local FinalLogo = ""
 -- ================================================
 -- STATE
 -- ================================================
