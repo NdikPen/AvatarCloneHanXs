@@ -143,44 +143,83 @@ end
 -- jadi tidak lagi membekukan render thread utama.
 local function getItems(player)
     local items = {}
-    if not player then return items end
+    if not player then
+        return items
+    end
 
     local cacheKey = "avatar_" .. player.UserId
-    if itemCache[cacheKey] and (os.time() - itemCache[cacheKey].timestamp) < CACHE_TTL then
+
+    if itemCache[cacheKey]
+        and (os.time() - itemCache[cacheKey].timestamp) < CACHE_TTL then
         return itemCache[cacheKey].items
     end
 
-    local raw = httpGet("https://avatar.roblox.com/v1/users/" .. player.UserId .. "/avatar")
-    if not raw then return items end
+    local raw = httpGet(
+        "https://avatar.roblox.com/v1/users/"
+        .. player.UserId
+        .. "/avatar"
+    )
 
-    local ok, data = pcall(function() return HttpService:JSONDecode(raw) end)
-    if not ok or not data or not data.assets then return items end
+    if not raw then
+        return items
+    end
 
-    for _, asset in ipairs(data.assets) do
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(raw)
+    end)
+
+    if not ok or not data or not data.assets then
+        return items
+    end
+
+    -- PENTING:
+    -- Jangan table.sort() di sini.
+    -- Ambil asset berdasarkan urutan yang dikirim API target.
+    for index, asset in ipairs(data.assets) do
         if asset and asset.id then
             local assetId = tonumber(asset.id)
+
             if assetId and assetId > 0 then
                 local assetType = "ACC"
                 local typeName = ""
+
                 if type(asset.assetType) == "table" then
-                    typeName = string.lower(asset.assetType.name or "")
+                    typeName = string.lower(
+                        asset.assetType.name or ""
+                    )
                 elseif asset.assetType then
-                    typeName = string.lower(tostring(asset.assetType))
+                    typeName = string.lower(
+                        tostring(asset.assetType)
+                    )
                 end
-                if typeName:find("body") or typeName:find("torso") or typeName:find("leg") or typeName:find("head") or typeName:find("arm") then
+
+                if typeName:find("body")
+                    or typeName:find("torso")
+                    or typeName:find("leg")
+                    or typeName:find("head")
+                    or typeName:find("arm") then
+
                     assetType = "BODY"
                 end
 
                 table.insert(items, {
                     Value = tostring(assetId),
-                    Label = asset.name or "Item " .. assetId,
+                    Label = asset.name
+                        or ("Item " .. assetId),
                     Type = assetType,
+
+                    -- Simpan posisi asli asset dari target
+                    TargetOrder = index
                 })
             end
         end
     end
 
-    itemCache[cacheKey] = {items = items, timestamp = os.time()}
+    itemCache[cacheKey] = {
+        items = items,
+        timestamp = os.time()
+    }
+
     return items
 end
 
