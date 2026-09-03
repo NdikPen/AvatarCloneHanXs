@@ -34,17 +34,7 @@ local T                = _G.T or {}
 local Helpers          = _G.Helpers or {}
 local Config           = _G.Config or {}
 
--- appContent baru tersedia saat Phone membuka sebuah app.
--- JANGAN ambil _G.appContent di sini karena file Application
--- diload sebelum UI Phone selesai dibuat.
-
-local renderToken = 0
-
-local function isCurrentRender(container, token)
-    return token == _G.ProfileAppRenderToken
-        and container
-        and container.Parent ~= nil
-end
+local appContent       = _G.appContent
 
 -- ==================== HELPER FALLBACK ====================
 -- Kalau Helpers.tween/pressFX belum ada, jangan biarkan seluruh app
@@ -273,18 +263,6 @@ end
 
 -- ==================== MAIN ====================
 function _G.openProfileApp()
-    -- appContent harus diambil SAAT app dibuka.
-    local appContent = _G.appContent
-
-    if not appContent then
-        warn("[Profile] appContent belum tersedia.")
-        return
-    end
-
-    -- Token baru setiap Profile dibuka.
-    _G.ProfileAppRenderToken = (_G.ProfileAppRenderToken or 0) + 1
-    renderToken = _G.ProfileAppRenderToken
-
     -- Bungkus SEMUANYA dengan pcall — kalau ada error di manapun,
     -- tampilkan pesan error yang jelas alih-alih layar kosong.
     local ok, err = pcall(function()
@@ -467,23 +445,16 @@ function _G.openProfileApp()
         local fetchedItems = {}
 
         fetchItems(p, function(items, errMsg)
-            -- Request berjalan async. Kalau Profile sudah ditutup/dibuka
-            -- ulang, jangan sentuh UI lama.
-            if not isCurrentRender(itemContainer, renderToken) then
-                return
-            end
+            -- Callback ini jalan di thread terpisah (task.spawn), jadi
+            -- aman dipanggil kapan saja tanpa nge-freeze render awal.
+            fetchedItems = items
 
-            fetchedItems = items or {}
-
-            -- Semua update callback dibungkus pcall supaya kegagalan
-            -- setelah UI ditutup tidak memutus thread.
-            local callbackOK, callbackErr = pcall(function()
-                -- Bersihkan skeleton
-                for _, child in ipairs(itemContainer:GetChildren()) do
-                    if not child:IsA("UIListLayout") then
-                        child:Destroy()
-                    end
+            -- Bersihkan skeleton
+            for _, child in ipairs(itemContainer:GetChildren()) do
+                if not child:IsA("UIListLayout") then
+                    child:Destroy()
                 end
+            end
 
             if errMsg then
                 statsLbl.Text = "Gagal memuat"
@@ -544,17 +515,11 @@ function _G.openProfileApp()
             -- Aktifkan tombol Clone sekarang data sudah siap
             cloneBtn.Active = true
             cloneBtn.BackgroundTransparency = 0
-                cloneBtn.Text = "⧉  Clone Avatar (" .. #items .. ")"
-            end)
-
-            if not callbackOK then
-                warn("[Profile] Async UI callback error: " .. tostring(callbackErr))
-            end
+            cloneBtn.Text = "⧉  Clone Avatar (" .. #items .. ")"
         end)
 
         -- ==================== CLONE BUTTON LOGIC ====================
         cloneBtn.MouseButton1Click:Connect(function()
-            if not isCurrentRender(itemContainer, renderToken) then return end
             if not cloneBtn.Active then return end
             if _G.PhoneState and _G.PhoneState.isCloning then
                 notify("Sedang proses cloning...", colors.gold)
