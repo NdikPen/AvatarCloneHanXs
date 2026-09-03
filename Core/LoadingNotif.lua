@@ -279,7 +279,7 @@ local function createLoadingNotification()
 
     titleLbl.BackgroundTransparency = 1
 
-    titleLbl.Text = "PhoneIDViewer"
+    titleLbl.Text = "HanXsPhone"
 
     titleLbl.TextColor3 = colors.text
 
