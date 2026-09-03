@@ -16,9 +16,21 @@ local tween = Helpers.tween
 -- ASSETS
 -- ================================================
 
-local LocalPath = "Logo/icon.png"
-
 local FinalLogo = ""
+
+pcall(function()
+    if _G.PhoneIDViewerLogo and _G.PhoneIDViewerLogo ~= "" then
+        FinalLogo = _G.PhoneIDViewerLogo
+    elseif isfile and isfile("PhoneIDViewer_Logo.png") and getcustomasset then
+        FinalLogo = getcustomasset("PhoneIDViewer_Logo.png")
+    end
+end)
+
+if FinalLogo ~= "" then
+    print("[LoadingNotif] Logo: OK")
+else
+    warn("[LoadingNotif] Logo: FAILED")
+end
 -- ================================================
 -- STATE
 -- ================================================

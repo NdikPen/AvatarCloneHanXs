@@ -17,38 +17,50 @@ local LOGO_URL = BASE_URL .. "Logo/icon.png"
 local LOGO_LOCAL = "PhoneIDViewer_Logo.png"
 
 local function LoadLogo()
-    -- Cek support file system
     if not isfile or not writefile then
-        warn("[PhoneIDViewer] Executor tidak support isfile/writefile.")
-        return
+        warn("[PhoneIDViewer] File system tidak tersedia.")
+        return ""
     end
 
-    -- Kalau logo sudah pernah didownload
-    if isfile(LOGO_LOCAL) then
-        print("[PhoneIDViewer] Logo cache found.")
-        return
-    end
-
-    -- Download logo dari GitHub
     local ok, result = pcall(function()
         local imageData = game:HttpGet(LOGO_URL, true)
 
-        if not imageData or #imageData == 0 then
-            error("Logo data kosong.")
+        if not imageData or #imageData < 100 then
+            error("Data logo tidak valid.")
         end
 
         writefile(LOGO_LOCAL, imageData)
+
+        return true
     end)
 
-    if ok then
+    if ok and result then
         print("[PhoneIDViewer] Logo downloaded successfully!")
     else
-        warn("[PhoneIDViewer] Failed to download logo: " .. tostring(result))
+        warn("[PhoneIDViewer] Logo download failed:", tostring(result))
     end
+
+    -- Buat asset Roblox
+    if isfile(LOGO_LOCAL) and getcustomasset then
+        local assetOK, asset = pcall(function()
+            return getcustomasset(LOGO_LOCAL)
+        end)
+
+        if assetOK and asset then
+            _G.PhoneIDViewerLogo = asset
+            print("[PhoneIDViewer] Logo asset: OK")
+            return asset
+        else
+            warn("[PhoneIDViewer] getcustomasset failed:", tostring(asset))
+        end
+    end
+
+    return ""
 end
 
--- Download logo sebelum module dijalankan
-LoadLogo()
+local LOGO_ASSET = LoadLogo()
+_G.PhoneIDViewerLogo = LOGO_ASSET
+_G.PhoneIDViewerLogoPath = LOGO_LOCAL
 
 -- ================================================
 -- MODULE LOADER
