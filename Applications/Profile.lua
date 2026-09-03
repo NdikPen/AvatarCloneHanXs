@@ -36,6 +36,22 @@ local Config           = _G.Config or {}
 
 local appContent       = _G.appContent
 
+if not appContent then
+    warn("[Profile] appContent tidak ditemukan.")
+    return
+end
+
+-- Token render: mencegah request lama menulis ke UI Profile yang sudah
+-- ditutup atau sudah dibuka ulang untuk player lain.
+_G.ProfileAppRenderToken = (_G.ProfileAppRenderToken or 0) + 1
+local renderToken = _G.ProfileAppRenderToken
+
+local function isCurrentRender(container)
+    return renderToken == _G.ProfileAppRenderToken
+        and container
+        and container.Parent ~= nil
+end
+
 -- ==================== HELPER FALLBACK ====================
 -- Kalau Helpers.tween/pressFX belum ada, jangan biarkan seluruh app
 -- crash karena satu fungsi nil — sediakan fallback aman.
@@ -445,16 +461,23 @@ function _G.openProfileApp()
         local fetchedItems = {}
 
         fetchItems(p, function(items, errMsg)
-            -- Callback ini jalan di thread terpisah (task.spawn), jadi
-            -- aman dipanggil kapan saja tanpa nge-freeze render awal.
-            fetchedItems = items
-
-            -- Bersihkan skeleton
-            for _, child in ipairs(itemContainer:GetChildren()) do
-                if not child:IsA("UIListLayout") then
-                    child:Destroy()
-                end
+            -- Request berjalan async. Kalau Profile sudah ditutup/dibuka
+            -- ulang, jangan sentuh UI lama.
+            if not isCurrentRender(itemContainer) then
+                return
             end
+
+            fetchedItems = items or {}
+
+            -- Semua update callback dibungkus pcall supaya kegagalan
+            -- setelah UI ditutup tidak memutus thread.
+            local callbackOK, callbackErr = pcall(function()
+                -- Bersihkan skeleton
+                for _, child in ipairs(itemContainer:GetChildren()) do
+                    if not child:IsA("UIListLayout") then
+                        child:Destroy()
+                    end
+                end
 
             if errMsg then
                 statsLbl.Text = "Gagal memuat"
@@ -515,11 +538,17 @@ function _G.openProfileApp()
             -- Aktifkan tombol Clone sekarang data sudah siap
             cloneBtn.Active = true
             cloneBtn.BackgroundTransparency = 0
-            cloneBtn.Text = "⧉  Clone Avatar (" .. #items .. ")"
+                cloneBtn.Text = "⧉  Clone Avatar (" .. #items .. ")"
+            end)
+
+            if not callbackOK then
+                warn("[Profile] Async UI callback error: " .. tostring(callbackErr))
+            end
         end)
 
         -- ==================== CLONE BUTTON LOGIC ====================
         cloneBtn.MouseButton1Click:Connect(function()
+            if not isCurrentRender(itemContainer) then return end
             if not cloneBtn.Active then return end
             if _G.PhoneState and _G.PhoneState.isCloning then
                 notify("Sedang proses cloning...", colors.gold)
