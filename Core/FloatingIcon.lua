@@ -34,18 +34,26 @@ local LogoURL = ""
 
 pcall(function()
 
-    -- Prioritas 1: logo yang sudah disiapkan oleh Loader.lua
+    -- Prioritas 1:
+    -- Logo yang sudah disiapkan oleh Loader.lua
     if _G.PhoneIDViewerLogo
-    and _G.PhoneIDViewerLogo ~= "" then
+        and _G.PhoneIDViewerLogo ~= "" then
 
         LogoURL = _G.PhoneIDViewerLogo
 
-    -- Prioritas 2: ambil langsung dari file lokal executor
+    -- Prioritas 2:
+    -- File logo lokal
     elseif isfile
-    and isfile("PhoneIDViewer_Logo.png")
-    and getcustomasset then
+        and isfile("PhoneIDViewer_Logo.png")
+        and getcustomasset then
 
-        LogoURL = getcustomasset("PhoneIDViewer_Logo.png")
+        local ok, asset = pcall(function()
+            return getcustomasset("PhoneIDViewer_Logo.png")
+        end)
+
+        if ok and asset then
+            LogoURL = asset
+        end
     end
 
 end)
@@ -62,6 +70,7 @@ end
 
 local function createFloatingIcon()
 
+    -- Hapus icon lama
     if phoneIcon then
 
         pcall(function()
@@ -70,7 +79,14 @@ local function createFloatingIcon()
 
     end
 
+    phoneIcon = nil
+    container = nil
+    btn = nil
+    logo = nil
+
     hasAppeared = false
+    isDragging = false
+    clickMoved = false
 
     -- ============================================
     -- SCREEN GUI
@@ -84,15 +100,27 @@ local function createFloatingIcon()
     gui.DisplayOrder = 999
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    pcall(function()
-        gui.Parent = game:GetService("CoreGui")
+    -- Untuk Delta, gunakan PlayerGui
+    local playerGui
+
+    local playerGuiOK, playerGuiResult = pcall(function()
+        return LocalPlayer:WaitForChild("PlayerGui")
     end)
 
-    if not gui.Parent then
-        gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    if playerGuiOK and playerGuiResult then
+        playerGui = playerGuiResult
     end
 
+    if not playerGui then
+        warn("[FloatingIcon] PlayerGui tidak ditemukan.")
+        return
+    end
+
+    gui.Parent = playerGui
+
     phoneIcon = gui
+
+    print("[FloatingIcon] ScreenGui created.")
 
     -- ============================================
     -- CONTAINER
@@ -119,6 +147,7 @@ local function createFloatingIcon()
         )
 
     container.BackgroundTransparency = 1
+    container.BorderSizePixel = 0
     container.ZIndex = 10
     container.Parent = gui
 
@@ -130,12 +159,15 @@ local function createFloatingIcon()
 
     btn.Name = "LogoButton"
 
+    -- PENTING:
+    -- Jangan mulai dari 0x0.
+    -- Kalau tween gagal, tombol tetap terlihat.
     btn.Size =
         UDim2.new(
             0,
+            56,
             0,
-            0,
-            0
+            56
         )
 
     btn.Position =
@@ -161,8 +193,12 @@ local function createFloatingIcon()
 
     btn.BackgroundTransparency = 0.05
 
+    btn.BorderSizePixel = 0
+
     btn.Text = ""
     btn.AutoButtonColor = false
+
+    btn.Active = true
 
     btn.ZIndex = 11
     btn.Parent = container
@@ -222,6 +258,8 @@ local function createFloatingIcon()
 
     inner.BackgroundTransparency = 0
 
+    inner.BorderSizePixel = 0
+
     inner.ZIndex = 12
     inner.Parent = btn
 
@@ -261,8 +299,8 @@ local function createFloatingIcon()
         )
 
     logo.BackgroundTransparency = 1
+    logo.BorderSizePixel = 0
 
-    -- Gunakan logo lokal dari Loader
     logo.Image = LogoURL
 
     logo.ScaleType =
@@ -312,6 +350,8 @@ local function createFloatingIcon()
             255,
             140
         )
+
+    status.BorderSizePixel = 0
 
     status.ZIndex = 15
     status.Parent = btn
@@ -410,14 +450,20 @@ local function createFloatingIcon()
                         math.clamp(
                             newX,
                             5,
-                            vp.X - 77
+                            math.max(
+                                5,
+                                vp.X - 77
+                            )
                         )
 
                     newY =
                         math.clamp(
                             newY,
                             5,
-                            vp.Y - 77
+                            math.max(
+                                5,
+                                vp.Y - 77
+                            )
                         )
 
                 end
@@ -444,41 +490,7 @@ local function createFloatingIcon()
 
         isHovering = true
 
-        tween(
-            btn,
-            {
-                Size =
-                    UDim2.new(
-                        0,
-                        62,
-                        0,
-                        62
-                    )
-            },
-            0.18
-        )
-
-        tween(
-            logo,
-            {
-                Size =
-                    UDim2.new(
-                        1,
-                        -10,
-                        1,
-                        -10
-                    )
-            },
-            0.18
-        )
-
-    end)
-
-    btn.MouseLeave:Connect(function()
-
-        isHovering = false
-
-        if hasAppeared then
+        pcall(function()
 
             tween(
                 btn,
@@ -486,9 +498,9 @@ local function createFloatingIcon()
                     Size =
                         UDim2.new(
                             0,
-                            56,
+                            62,
                             0,
-                            56
+                            62
                         )
                 },
                 0.18
@@ -500,13 +512,55 @@ local function createFloatingIcon()
                     Size =
                         UDim2.new(
                             1,
-                            -14,
+                            -10,
                             1,
-                            -14
+                            -10
                         )
                 },
                 0.18
             )
+
+        end)
+
+    end)
+
+    btn.MouseLeave:Connect(function()
+
+        isHovering = false
+
+        if hasAppeared then
+
+            pcall(function()
+
+                tween(
+                    btn,
+                    {
+                        Size =
+                            UDim2.new(
+                                0,
+                                56,
+                                0,
+                                56
+                            )
+                    },
+                    0.18
+                )
+
+                tween(
+                    logo,
+                    {
+                        Size =
+                            UDim2.new(
+                                1,
+                                -14,
+                                1,
+                                -14
+                            )
+                    },
+                    0.18
+                )
+
+            end)
 
         end
 
@@ -518,7 +572,6 @@ local function createFloatingIcon()
 
     btn.MouseButton1Click:Connect(function()
 
-        -- Jangan dianggap klik kalau icon digeser
         if clickMoved then
             return
         end
@@ -531,13 +584,21 @@ local function createFloatingIcon()
             and phoneFrame.Visible then
 
             if _G.closePhone then
-                _G.closePhone()
+
+                pcall(function()
+                    _G.closePhone()
+                end)
+
             end
 
         else
 
             if _G.openPhone then
-                _G.openPhone()
+
+                pcall(function()
+                    _G.openPhone()
+                end)
+
             end
 
         end
@@ -548,30 +609,52 @@ local function createFloatingIcon()
     -- APPEAR ANIMATION
     -- ============================================
 
+    -- Langsung dianggap sudah muncul.
+    -- Jadi tidak bergantung pada tween.
+    hasAppeared = true
+
     task.spawn(function()
 
         task.wait(0.1)
 
-        tween(
-            btn,
-            {
-                Size =
-                    UDim2.new(
-                        0,
-                        56,
-                        0,
-                        56
-                    )
-            },
-            0.45,
-            Enum.EasingStyle.Back
-        )
+        pcall(function()
 
-        hasAppeared = true
+            tween(
+                btn,
+                {
+                    Size =
+                        UDim2.new(
+                            0,
+                            56,
+                            0,
+                            56
+                        )
+                },
+                0.45,
+                Enum.EasingStyle.Back
+            )
+
+        end)
 
     end)
 
-    print("[FloatingIcon] Modern logo icon created!")
+    -- ============================================
+    -- FINAL CHECK
+    -- ============================================
+
+    if gui.Parent
+        and container.Parent
+        and btn.Parent then
+
+        print("[FloatingIcon] Icon berhasil dibuat.")
+        print("[FloatingIcon] Parent:", gui.Parent:GetFullName())
+        print("[FloatingIcon] Size:", btn.AbsoluteSize)
+
+    else
+
+        warn("[FloatingIcon] Icon gagal dibuat.")
+
+    end
 
 end
 
@@ -583,7 +666,17 @@ task.spawn(function()
 
     task.wait(1)
 
-    createFloatingIcon()
+    local ok, err =
+        pcall(function()
+            createFloatingIcon()
+        end)
+
+    if not ok then
+        warn(
+            "[FloatingIcon] Create Error:",
+            tostring(err)
+        )
+    end
 
 end)
 
@@ -600,8 +693,20 @@ task.spawn(function()
         if not phoneIcon
             or not phoneIcon.Parent then
 
-            if hasAppeared then
-                createFloatingIcon()
+            print("[FloatingIcon] Icon hilang, membuat ulang...")
+
+            local ok, err =
+                pcall(function()
+                    createFloatingIcon()
+                end)
+
+            if not ok then
+
+                warn(
+                    "[FloatingIcon] Recreate Error:",
+                    tostring(err)
+                )
+
             end
 
         end
